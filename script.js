@@ -1,0 +1,48 @@
+const header=document.querySelector('.site-header');
+const menu=document.querySelector('.menu');
+const links=document.querySelector('.links');
+const progress=document.querySelector('.reading-progress span');
+const themeToggle=document.querySelector('#theme-toggle');
+const preferencesKey='eest2-preferences';
+function loadPreferences(){try{return JSON.parse(localStorage.getItem(preferencesKey))||{}}catch{return {}}}
+let preferences=loadPreferences();
+function savePreferences(changes={}){preferences={...preferences,...changes};localStorage.setItem(preferencesKey,JSON.stringify(preferences))}
+function applyTheme(theme){document.body.dataset.theme=theme;const dark=theme==='dark';themeToggle.setAttribute('aria-pressed',String(dark));themeToggle.setAttribute('aria-label',dark?'Activar modo claro':'Activar modo oscuro');themeToggle.querySelector('b').textContent=dark?'Modo claro':'Modo oscuro'}
+applyTheme(preferences.theme==='dark'?'dark':'light');
+themeToggle.addEventListener('click',()=>{const theme=document.body.dataset.theme==='dark'?'light':'dark';applyTheme(theme);savePreferences({theme})});
+function updateScrollUI(){header.classList.toggle('scrolled',scrollY>20);const available=document.documentElement.scrollHeight-innerHeight;progress.style.width=`${available>0?Math.min(100,(scrollY/available)*100):0}%`}
+addEventListener('scroll',updateScrollUI,{passive:true});
+addEventListener('resize',updateScrollUI);
+updateScrollUI();
+menu.addEventListener('click',()=>{const open=links.classList.toggle('open');menu.setAttribute('aria-expanded',String(open));menu.setAttribute('aria-label',open?'Cerrar menú':'Abrir menú')});
+links.querySelectorAll('a').forEach(link=>link.addEventListener('click',()=>{links.classList.remove('open');menu.setAttribute('aria-expanded','false')}));
+if('IntersectionObserver' in window){const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('visible');observer.unobserve(entry.target)}}),{threshold:.12});document.querySelectorAll('.reveal').forEach(element=>observer.observe(element))}else{document.querySelectorAll('.reveal').forEach(element=>element.classList.add('visible'))}
+document.querySelectorAll('[data-cycle]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-cycle]').forEach(item=>{item.classList.remove('active');item.setAttribute('aria-selected','false')});document.querySelectorAll('.cycle').forEach(panel=>{panel.classList.remove('active');panel.hidden=true});button.classList.add('active');button.setAttribute('aria-selected','true');const panel=document.getElementById(button.dataset.cycle);panel.hidden=false;panel.classList.add('active')}));
+const subjects={programacion:{'4.º año':['Currícula compartida por las tecnicaturas de Informática y Programación.'],'5.º año':['Bases de Datos','Modelos y Sistemas','Laboratorio de Redes Informáticas','Laboratorio de Diseño Web','Laboratorio de Diseño de Bases de Datos'],'6.º año':['Matemática Discreta','Sistemas de Gestión y Autogestión','Laboratorio de Procesos Industriales','Laboratorio de Aplicaciones Web Estáticas','Laboratorio de Aplicaciones Web Dinámicas'],'7.º año':['Organización y Métodos','Seguridad Informática','Proyecto de Desarrollo de Software para Plataformas Móviles','Proyecto de Implementación de Sitios Web Dinámicos','Prácticas Profesionalizantes']},informatica:{'4.º año':['Currícula compartida por las tecnicaturas de Informática y Programación.'],'5.º año':['Teleinformática','Laboratorio de Hardware','Laboratorio de Sistemas Operativos','Laboratorio de Aplicaciones'],'6.º año':['Matemática Aplicada','Investigación Operativa','Laboratorio de Hardware','Laboratorio de Sistemas Operativos','Laboratorio de Aplicaciones'],'7.º año':['Base de Datos','Instalación, Mantenimiento y Reparación de Sistemas Computacionales','Instalación, Mantenimiento y Reparación de Redes Informáticas','Prácticas Profesionalizantes']}};
+const sharedSeventh=['Emprendimientos Productivos y Desarrollo Local','Evaluación de Proyectos','Modelos y Sistemas','Proyecto, Diseño e Implementación de Sistemas Computacionales'];
+const accordion=document.querySelector('#accordion');
+function renderAccordion(orientation){accordion.innerHTML=Object.entries(subjects[orientation]).map(([year,list],index)=>{const items=index===3?[...list,...sharedSeventh.map(item=>`${item} (compartida)`)]:list;return `<div class="acc ${index===0?'open':''}"><button type="button" aria-expanded="${index===0}"><span>0${index+4}</span><strong>${year}</strong><b aria-hidden="true">${index===0?'−':'+'}</b></button><div class="acc-content"><ul>${items.map(item=>`<li>${item}</li>`).join('')}</ul></div></div>`}).join('');accordion.querySelectorAll('.acc>button').forEach(button=>button.addEventListener('click',()=>{const item=button.parentElement;const open=item.classList.toggle('open');button.setAttribute('aria-expanded',String(open));button.lastElementChild.textContent=open?'−':'+'}))}
+const initialOrientation=preferences.orientation==='informatica'?'informatica':'programacion';
+document.querySelectorAll('[data-orient]').forEach(item=>item.classList.toggle('active',item.dataset.orient===initialOrientation));
+renderAccordion(initialOrientation);
+document.querySelectorAll('[data-orient]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-orient]').forEach(item=>item.classList.remove('active'));button.classList.add('active');renderAccordion(button.dataset.orient);savePreferences({orientation:button.dataset.orient})}));
+const profiles={programacion:{title:'Tecnicatura en Programación',description:'Orienta la formación al desarrollo de aplicaciones, la lógica de código, los datos, la web, la seguridad informática y las plataformas móviles.',areas:['Aplicaciones web','Bases de datos','Software móvil','Seguridad informática']},informatica:{title:'Tecnicatura en Informática',description:'Orienta la formación a la instalación, el mantenimiento y la reparación de equipos, sistemas computacionales y redes informáticas.',areas:['Hardware','Sistemas operativos','Redes informáticas','Soporte y aplicaciones']}};
+const dialog=document.querySelector('dialog');const modal=document.querySelector('#modal');
+document.querySelectorAll('[data-program]').forEach(button=>button.addEventListener('click',()=>{const profile=profiles[button.dataset.program];modal.innerHTML=`<p class="eyebrow blue">Perfil profesional</p><h2 id="modal-title">${profile.title}</h2><p>${profile.description}</p><div class="modal-grid">${profile.areas.map((area,index)=>`<span><b>0${index+1}</b>${area}</span>`).join('')}</div>`;dialog.showModal()}));
+document.querySelector('.close').addEventListener('click',()=>dialog.close());dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close()});
+const slides=[{src:'Escudo.png',alt:'Escudo oficial de la E.E.S.T. N.º 2',label:'Identidad institucional',title:'Escudo de la Técnica 2',description:'Símbolo que identifica a la E.E.S.T. N.º 2 de Valentín Alsina.',background:'#101a32'},{src:'Organigrama (1).png',alt:'Organigrama institucional de la E.E.S.T. N.º 2',label:'Organización institucional',title:'Estructura de la escuela',description:'Equipo directivo, secretaría, preceptoría, jefatura de área y departamentos.',background:'#ffffff'}];
+let currentSlide=Number.isInteger(preferences.carouselIndex)?Math.min(slides.length-1,Math.max(0,preferences.carouselIndex)):0;
+const carouselImage=document.querySelector('#carousel-image');
+const carouselLabel=document.querySelector('#carousel-label');
+const carouselTitle=document.querySelector('#carousel-title');
+const carouselDescription=document.querySelector('#carousel-description');
+const carouselCounter=document.querySelector('#carousel-counter');
+function renderSlide(animate=true){const slide=slides[currentSlide];const update=()=>{carouselImage.src=slide.src;carouselImage.alt=slide.alt;carouselImage.parentElement.style.background=slide.background;carouselLabel.textContent=slide.label;carouselTitle.textContent=slide.title;carouselDescription.textContent=slide.description;carouselCounter.textContent=`${currentSlide+1} / ${slides.length}`;carouselImage.classList.remove('changing');savePreferences({carouselIndex:currentSlide})};if(animate&&!matchMedia('(prefers-reduced-motion: reduce)').matches){carouselImage.classList.add('changing');setTimeout(update,160)}else{update()}}
+document.querySelector('#carousel-previous').addEventListener('click',()=>{currentSlide=(currentSlide-1+slides.length)%slides.length;renderSlide()});
+document.querySelector('#carousel-next').addEventListener('click',()=>{currentSlide=(currentSlide+1)%slides.length;renderSlide()});
+renderSlide(false);
+const form=document.querySelector('#form');
+const formFields=[...form.querySelectorAll('input,select,textarea')];
+function validateField(field){const label=field.closest('label');const valid=field.checkValidity();label.classList.toggle('invalid',!valid);return valid}
+formFields.forEach(field=>{field.addEventListener('input',()=>validateField(field));field.addEventListener('change',()=>validateField(field))});
+form.addEventListener('submit',event=>{event.preventDefault();const valid=formFields.map(validateField).every(Boolean);const status=form.querySelector('.status');status.classList.toggle('error',!valid);status.textContent=valid?'Consulta preparada. Para enviarla, comunicate con la secretaría por un canal oficial de la institución.':'Revisá los campos señalados antes de continuar.';if(!valid)form.querySelector('.invalid input,.invalid select,.invalid textarea')?.focus()});
